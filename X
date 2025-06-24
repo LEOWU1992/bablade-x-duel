@@ -1,0 +1,198 @@
+html_content = '''
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BABLADE X 對戰👀</title>
+  <style>
+    body {
+      font-family: "Arial", sans-serif;
+      background-color: #f9f9fb;
+      margin: 0;
+      padding: 1rem;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      font-size: 1.5rem;
+    }
+    input[type="text"] {
+      width: 7em;
+      padding: 8px;
+      margin: 4px 4px;
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      margin: 0.25rem;
+      border: none;
+      border-radius: 4px;
+      background-color: #556bfa;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #3949c7;
+    }
+    .pair {
+      padding: 0.5rem;
+      margin: 0.5rem 0;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 0.95rem;
+    }
+    .winner-btn {
+      margin-left: 1rem;
+      background-color: #28a745;
+    }
+    .winner-btn:hover {
+      background-color: #1c7a35;
+    }
+    .winner-selected {
+      background-color: #dc3545 !important;
+      color: white;
+    }
+    #restart {
+      background-color: #ff4444;
+    }
+    #restart:hover {
+      background-color: #c82333;
+    }
+    @media (max-width: 600px) {
+      body {
+        padding: 0.5rem;
+      }
+      button {
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<h1>BABLADE X 對戰👀</h1>
+<p>請輸入參賽陀螺鬥士們</p>
+<div id="playerInputs"></div>
+<button id="startBtn" onclick="startTournament()">開始比賽</button>
+<button id="restart" onclick="location.reload()">全部清除</button>
+
+<div id="roundContainer"></div>
+
+<script>
+  let round = 1;
+  let allPairsHistory = new Set();
+  let currentPlayers = [];
+  let winners = [];
+  const maxInputs = 50;
+
+  const playerInputs = document.getElementById('playerInputs');
+  function createInput(index) {
+    if (playerInputs.children.length >= maxInputs) return;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.maxLength = 15;
+    input.placeholder = `選手 ${index}`;
+    input.addEventListener('input', checkToAddInput);
+    playerInputs.appendChild(input);
+  }
+
+  function checkToAddInput() {
+    const allFilled = [...playerInputs.querySelectorAll('input')].every(input => input.value.trim().length > 0);
+    if (allFilled && playerInputs.children.length < maxInputs) {
+      createInput(playerInputs.children.length + 1);
+    }
+  }
+
+  for (let i = 1; i <= 3; i++) {
+    createInput(i);
+  }
+
+  function startTournament() {
+    const inputElements = document.querySelectorAll('#playerInputs input');
+    let players = Array.from(inputElements)
+      .map(input => input.value.trim())
+      .filter(name => name.length > 0);
+    if (players.length < 2) return alert('至少要兩位選手！');
+    if (players.length % 2 !== 0) players.push('種子');
+
+    currentPlayers = players;
+    allPairsHistory = new Set();
+    winners = [];
+    round = 1;
+
+    document.getElementById('startBtn').textContent = '產生新局';
+    playerInputs.style.display = 'none';
+    nextRound(players);
+  }
+
+  function shuffleArray(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
+
+  function nextRound(players) {
+    const container = document.getElementById('roundContainer');
+    container.innerHTML = '';
+    let title = document.createElement('h2');
+    title.textContent = `第 ${round} 輪 對戰選手`;
+    container.appendChild(title);
+
+    let shuffled = shuffleArray([...players]);
+    let pairs = [];
+
+    for (let i = 0; i < shuffled.length; i += 2) {
+      let a = shuffled[i], b = shuffled[i + 1];
+      pairs.push({ a, b });
+    }
+
+    pairs.forEach(({ a, b }) => {
+      const div = document.createElement('div');
+      div.className = 'pair';
+      div.innerHTML = `${a} 🆚 ${b} 
+        <button class="winner-btn" onclick="setWinner('${a}', '${b}', '${a}', this)">勝者 ${a}</button>
+        <button class="winner-btn" onclick="setWinner('${a}', '${b}', '${b}', this)">勝者 ${b}</button>`;
+      container.appendChild(div);
+    });
+
+    round++;
+  }
+
+  function setWinner(a, b, winner, btn) {
+    winners.push(winner);
+    const div = btn.parentElement;
+    div.querySelectorAll("button").forEach(b => {
+      b.disabled = true;
+      b.classList.remove("winner-selected");
+    });
+    btn.classList.add("winner-selected");
+
+    const allDisabled = [...document.querySelectorAll(".pair button")].every(btn => btn.disabled);
+    if (allDisabled) {
+      if (winners.length === 1) {
+        document.getElementById('roundContainer').innerHTML = `<h2>🏆 冠軍是：${winners[0]}！</h2>`;
+        return;
+      }
+      if (winners.length % 2 !== 0 && !winners.includes('種子')) winners.push('種子');
+      currentPlayers = [...winners];
+      winners = [];
+      setTimeout(() => nextRound(currentPlayers), 500);
+    }
+  }
+</script>
+</body>
+</html>
+'''
+
+# 儲存為 HTML 檔案
+file_path = "/mnt/data/BABLADE_X_對戰助手_Mobile_v2.html"
+with open(file_path, "w", encoding="utf-8") as f:
+    f.write(html_content)
+
+file_path
